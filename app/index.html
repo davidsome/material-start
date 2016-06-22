@@ -11,6 +11,7 @@
     <link rel='stylesheet' href='http://fonts.googleapis.com/css?family=Roboto:400,500,700,400italic'>
     <link rel="stylesheet" href="../node_modules/angular-material/angular-material.css"/>
     <link rel="stylesheet" href="assets/app.css"/>
+      <link rel="stylesheet" href="../node_modules/toastr/build/toastr.min.css"/>
 
     <style type="text/css">
         /**
@@ -29,29 +30,51 @@
       <md-button class="menu" hide-gt-sm ng-click="ul.toggleList()" aria-label="Show User List">
         <md-icon md-svg-icon="menu" ></md-icon>
       </md-button>
-      <h1>Angular Material - Starter App</h1>
+      <h1>Redis Cluster Manager</h1>
     </md-toolbar>
 
     <div flex layout="row">
 
         <md-sidenav  ng-click="ul.toggleList()" md-is-locked-open="$mdMedia('gt-sm')" md-component-id="left" class="md-whiteframe-z2" >
           <md-list>
-            <md-list-item ng-repeat="it in ul.users">
-                <md-button ng-click="ul.selectUser(it)" ng-class="{'selected' : it === ul.selected }">
-                  <md-icon md-svg-icon="{{it.avatar}}" class="avatar"></md-icon>
-                  {{it.name}}
+            <md-list-item ng-repeat="it in ul.rgs">
+                <md-button ng-click="ul.selectRg(it)" ng-class="{'selected' : it === ul.selected }">
+                    {{it.status}}
+                    <p>源{{it.source}}</p>
+                    <p>目的{{it.destination}}</p>
                 </md-button>
+            </md-list-item>
+            <md-list-item>
+              <md-button class="md-fab md-primary" ng-click="ul.addRg()">新增rg</md-button>
             </md-list-item>
           </md-list>
         </md-sidenav>
 
         <md-content flex id="content">
-          <md-icon md-svg-icon="{{ul.selected.avatar}}" class="avatar"></md-icon>
-          <h2>{{ul.selected.name}}</h2>
-          <p>{{ul.selected.content}}</p>
+          <md-icon md-svg-icon="svg-1" class="avatar"></md-icon>
+          <h2>任务状态{{ul.selected.status}}</h2>
+            <p>任务ID{{ul.selected.id}}</p>
+           <p>源{{ul.selected.source}}-->目的{{ul.selected.destination}}</p>
+           <h2>该rg下面所有的rp</h2>
+            <!---->
+            <md-content>
+                <md-list>
+                    <md-list-item class="md-3-line" ng-repeat="item in ul.selected.rp">
+                        <div class="md-list-item-text">
+                            <h3>{{item[0]}}</h3>
+                            <p>源{{item[1].source}}</p>
+                            <p>目的{{item[1].destination}}</p>
+                        </div>
+                        <md-button class="md-fab md-primary" ng-click="ul.rpStart(item[0])">start</md-button>
+                        <md-button class="md-fab md-warn" ng-click="ul.rpStop(item[0])">stop</md-button>
+                        <md-divider ng-if="!$last"></md-divider>
+                    </md-list-item>
+                </md-list>
+            </md-content>
+            <!---->
 
-          <md-button class="share" md-no-ink ng-click="ul.makeContact(ul.selected)" aria-label="Share with {{ ul.selected.name }}">
-            <md-icon md-svg-icon="share"></md-icon>
+          <md-button class="share md-raised" md-no-ink ng-click="ul.makeContact(ul.selected)" aria-label="Share with {{ ul.selected.name }}">
+              action
           </md-button>
         </md-content>
 
@@ -61,13 +84,15 @@
     <script src="../node_modules/angular-animate/angular-animate.js"></script>
     <script src="../node_modules/angular-aria/angular-aria.js"></script>
     <script type="text/javascript" src="../node_modules/angular-material/angular-material.js"></script>
+    <script src="../node_modules/toastr/build/toastr.min.js"></script>
 
     <script src="./src/users/Users.js"></script>
     <script src="./src/users/UserController.js"></script>
     <script src="./src/users/UserService.js"></script>
 
     <script type="text/javascript">
-
+          var API_PREFIX = "test";
+          var API_END = ".json";
           angular
               .module('starterApp', ['ngMaterial', 'users'])
               .config(function($mdThemingProvider, $mdIconProvider){
@@ -85,7 +110,19 @@
                           .primaryPalette('brown')
                           .accentPalette('red');
 
-              });
+              })
+                  .value("API_URL", {
+                      "rgAll": API_PREFIX + "/rg/all" + API_END,
+                      "rgDetail": API_PREFIX + "/rg/",
+                      'rgStart': API_PREFIX + "/rg/start",
+                      'rgKill': API_PREFIX + "/rg/kill",
+                      'rgDelete': API_PREFIX + "/rg/",
+                      'rpList': API_PREFIX + "/rg/",
+                      'rgCreate': API_PREFIX + '/rg/',
+                      'cms': API_PREFIX + '/cms/all' + API_END,
+                      'rpAction': API_PREFIX + '/rp/'
+                  })
+          ;
 
     </script>
 

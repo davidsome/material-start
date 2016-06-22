@@ -1,0 +1,46 @@
+<md-bottom-sheet class="md-list md-has-header">
+
+    <md-subheader>
+        新增rg
+    </md-subheader>
+
+    <md-list>
+        <md-list-item>
+            <md-input-container>
+                <label>source</label>
+                <md-select ng-model="vm.src" placeholder="Select a source" md-on-close="vm.clearSearchTerm()" ng-click="vm.chosen()">
+                    <md-select-header>
+                        <md-input-container>
+                        <input type="search" ng-model="vm.srcSearchTerm" id="srcSearchTerm"/>
+                        </md-input-container>
+                    </md-select-header>
+                    <md-optgroup>
+                        <md-option ng-value="opt.Name" ng-repeat="opt in vm.cms_items | filter:vm.srcSearchTerm">{{ opt.Name }}</md-option>
+                    </md-optgroup>
+                </md-select>
+            </md-input-container>
+        </md-list-item>
+        <md-list-item>
+            <md-input-container>
+                <label>destination</label>
+                <md-select ng-model="vm.dest" placeholder="Select a destination" md-on-close="vm.clearSearchTerm()" ng-click="vm.chosen()">
+                    <md-select-header>
+                        <md-input-container>
+                            <input type="search" ng-model="vm.destSearchTerm" id="destSearchTerm"/>
+                        </md-input-container>
+                    </md-select-header>
+                    <md-optgroup>
+                        <md-option ng-value="opt.Name" ng-repeat="opt in vm.cms_items | filter:vm.destSearchTerm">{{ opt.Name }}</md-option>
+                    </md-optgroup>
+                </md-select>
+            </md-input-container>
+        </md-list-item>
+        <md-list-item>
+            <md-button class="md-raised" ng-click="vm.rgCreate()">
+                <md-icon md-svg-src="your/icon.svg"></md-icon>
+                提交
+            </md-button>
+        </md-list-item>
+    </md-list>
+
+</md-bottom-sheet>

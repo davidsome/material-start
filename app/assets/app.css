@@ -129,3 +129,11 @@ span.name {
   font-size:1.1em;
   padding-left:5px;
 }
+
+.demo-header-searchbox {
+    border: none;
+    outline: none;
+    height: 100%;
+    width: 100%;
+    padding: 0;
+}

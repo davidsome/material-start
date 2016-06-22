@@ -1,0 +1,26 @@
+[
+    {
+        "id": "488182a9-ae4e-4be0-a7b1-344de776f5df",
+        "status": "STARTED",
+        "source": "HotelCrossSale",
+        "destination": "HotelCrossSale"
+    },
+    {
+        "id": "94bdf7a8-d948-4daf-8acb-11fa7292aaaa",
+        "status": "NEW",
+        "source": "HotelDirectConnectDomestic",
+        "destination": "HotelOrderTask"
+    },
+    {
+        "id": "c455531f-3c47-48cd-a624-806786a1a598",
+        "status": "NEW",
+        "source": "Corp.Product.Hotel",
+        "destination": "cciminfosec"
+    },
+    {
+        "id": "f2e2469b-5a7d-4d25-9507-a20356b3520b",
+        "status": "STARTED",
+        "source": "HotelFarmHouseService",
+        "destination": "HotelFarmHouseService"
+    }
+]
