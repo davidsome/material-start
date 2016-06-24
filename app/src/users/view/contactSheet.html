@@ -6,7 +6,7 @@
 
     <md-list>
       <md-list-item ng-repeat="item in vm.items">
-        <md-button ng-click="vm.contactUser(item)">
+        <md-button ng-click="vm.rgAction(item)">
             <md-icon md-svg-icon="{{ item.icon_url }}"></md-icon>
             {{item.name}}
         </md-button>

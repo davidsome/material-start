@@ -20,8 +20,10 @@
     "angular": "^1.5.5",
     "angular-animate": "^1.5.5",
     "angular-aria": "^1.5.5",
+    "angular-chart.js": "^1.0.0-alpha8",
     "angular-material": "git+https://github.com/angular/bower-material.git#master",
     "angular-messages": "^1.5.5",
+    "chart.js": "^2.1.6",
     "toastr": "^2.1.2",
     "ui-select": "^0.18.0"
   },

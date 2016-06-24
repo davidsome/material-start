@@ -59,16 +59,50 @@
             <!---->
             <md-content>
                 <md-list>
-                    <md-list-item class="md-3-line" ng-repeat="item in ul.selected.rp">
+                    <div ng-repeat="item in ul.selected.rps">
+                    <md-list-item class="md-3-line" >
                         <div class="md-list-item-text">
-                            <h3>{{item[0]}}</h3>
-                            <p>源{{item[1].source}}</p>
-                            <p>目的{{item[1].destination}}</p>
+                            <h3>{{item.data[0]}}</h3>
+                            <p>源{{item.data[1].source}}</p>
+                            <p>目的{{item.data[1].destination}}</p>
                         </div>
-                        <md-button class="md-fab md-primary" ng-click="ul.rpStart(item[0])">start</md-button>
-                        <md-button class="md-fab md-warn" ng-click="ul.rpStop(item[0])">stop</md-button>
-                        <md-divider ng-if="!$last"></md-divider>
+                        <md-button class="md-fab md-primary" ng-click="ul.rpStart(item.data[0])">start</md-button>
+                        <md-button class="md-fab md-warn" ng-click="ul.rpStop(item.data[0])">stop</md-button>
                     </md-list-item>
+                    <md-divider></md-divider>
+                    <md-list-item>
+                        <div class="md-list-item-text">
+                            <p>当前stat:{{item.sse.stat.slice(-1)[0]}}
+                                <md-button class="md-primary md-raised" ng-click="item.sse.stat_detail=!item.sse.stat_detail">
+                                    <span ng-show="item.sse.stat_detail">收起</span>
+                                    <span ng-show="!item.sse.stat_detail">展开</span>
+                                </md-button>
+                            </p>
+                            <p ng-show="item.sse.stat_detail">
+                                {{item.sse.stat}}
+                            </p>
+                            <p>当前heartbeat:
+                                <strong>broker</strong>
+                                <span style="color: green" ng-show="item.sse.heartbeat.broker_time >= 0">alive</span>
+                                <span style="color: red" ng-show="item.sse.heartbeat.broker_time < 0">down</span>
+                                <strong>duplicator</strong>
+                                <span style="color: green" ng-show="item.sse.heartbeat.duplicator_time >= 0">alive</span>
+                                <span style="color: red" ng-show="item.sse.heartbeat.duplicator_time < 0">down</span>
+                            </p>
+                            <p>当前traffic:</p>
+                                <canvas class="chart chart-line" chart-data="item.sse.traffic"
+                                        chart-labels="labels" chart-series="series_traffic" chart-options="options_traffic"
+                                        chart-dataset-override="datasetOverride_traffic">
+                                </canvas>
+                            <p>当前stat:</p>
+                                <canvas class="chart chart-line" chart-data="item.sse.statistics"
+                                        chart-labels="labels" chart-series="series_statistics" chart-options="options_statistics"
+                                        chart-dataset-override="datasetOverride_statistics">
+                                </canvas>
+                        </div>
+                    </md-list-item>
+                    <md-divider></md-divider>
+                    </div>
                 </md-list>
             </md-content>
             <!---->
@@ -85,16 +119,25 @@
     <script src="../node_modules/angular-aria/angular-aria.js"></script>
     <script type="text/javascript" src="../node_modules/angular-material/angular-material.js"></script>
     <script src="../node_modules/toastr/build/toastr.min.js"></script>
+    <script src="../node_modules/chart.js/dist/Chart.min.js"></script>
+    <script src="../node_modules/angular-chart.js/dist/angular-chart.min.js"></script>
 
     <script src="./src/users/Users.js"></script>
     <script src="./src/users/UserController.js"></script>
     <script src="./src/users/UserService.js"></script>
 
     <script type="text/javascript">
-          var API_PREFIX = "test";
-          var API_END = ".json";
+          var API_PREFIX = "http://testhost1:1234";
+          var API_END = "";
+          var STATUS_FAILED = "failed";
+          var STATUS_OK = "succeed";
+          var HB_TIMEOUT = 30;
+          function getRandomDomain(){
+              var num = parseInt(10*Math.random());
+              return "http://testhost" + num + ":1234"
+          }
           angular
-              .module('starterApp', ['ngMaterial', 'users'])
+              .module('starterApp', ['ngMaterial', 'chart.js', 'users'])
               .config(function($mdThemingProvider, $mdIconProvider){
 
                   $mdIconProvider
@@ -112,15 +155,12 @@
 
               })
                   .value("API_URL", {
-                      "rgAll": API_PREFIX + "/rg/all" + API_END,
-                      "rgDetail": API_PREFIX + "/rg/",
-                      'rgStart': API_PREFIX + "/rg/start",
-                      'rgKill': API_PREFIX + "/rg/kill",
-                      'rgDelete': API_PREFIX + "/rg/",
-                      'rpList': API_PREFIX + "/rg/",
-                      'rgCreate': API_PREFIX + '/rg/',
-                      'cms': API_PREFIX + '/cms/all' + API_END,
-                      'rpAction': API_PREFIX + '/rp/'
+                      "rgAll": getRandomDomain() + "/rg/all" + API_END,
+                      "rgDetail": getRandomDomain() + "/rg/",
+                      'rgAction': getRandomDomain() + "/rg/",
+                      'cms': getRandomDomain() + '/cms/' + API_END,
+                      'rpAction': getRandomDomain() + '/rp/',
+                      'sse': getRandomDomain() + '/sse/',
                   })
           ;
 
