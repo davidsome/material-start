@@ -39,10 +39,12 @@
           <md-list>
             <md-list-item ng-repeat="it in ul.rgs">
                 <md-button ng-click="ul.selectRg(it)" ng-class="{'selected' : it === ul.selected }">
-                    {{it.status}}
+                    状态{{it.status}}
+                    <span ng-show="it|rg_hb" style="color: green">alive</span>
+                    <span ng-show="!(it|rg_hb)" style="color: red">down</span>
                     <p>源{{it.source}}</p>
-                    <p>目的{{it.destination}}</p>
-                </md-button>
+                       <p>目的{{it.destination}}</p>
+             </md-button>
             </md-list-item>
             <md-list-item>
               <md-button class="md-fab md-primary" ng-click="ul.addRg()">新增rg</md-button>
@@ -53,7 +55,7 @@
         <md-content flex id="content">
           <md-icon md-svg-icon="svg-1" class="avatar"></md-icon>
           <h2>任务状态{{ul.selected.status}}</h2>
-            <p>任务ID{{ul.selected.id}}</p>
+            <p>任务ID {{ul.selected.id}}</p>
            <p>源{{ul.selected.source}}-->目的{{ul.selected.destination}}</p>
            <h2>该rg下面所有的rp</h2>
             <!---->
@@ -62,7 +64,7 @@
                     <div ng-repeat="item in ul.selected.rps">
                     <md-list-item class="md-3-line" >
                         <div class="md-list-item-text">
-                            <h3>{{item.data[0]}}</h3>
+                            <h3>任务ID {{item.data[0]}}</h3>
                             <p>源{{item.data[1].source}}</p>
                             <p>目的{{item.data[1].destination}}</p>
                         </div>
@@ -94,11 +96,16 @@
                                         chart-labels="labels" chart-series="series_traffic" chart-options="options_traffic"
                                         chart-dataset-override="datasetOverride_traffic">
                                 </canvas>
-                            <p>当前stat:</p>
+                            <p>当前statistics:</p>
                                 <canvas class="chart chart-line" chart-data="item.sse.statistics"
                                         chart-labels="labels" chart-series="series_statistics" chart-options="options_statistics"
                                         chart-dataset-override="datasetOverride_statistics">
                                 </canvas>
+                            <p>当前delay</p>
+                            <canvas class="chart chart-line" chart-data="item.sse.statistics_delay"
+                                    chart-labels="labels" chart-series="series_statistics_delay" chart-options="options_statistics"
+                                    chart-dataset-override="datasetOverride_statistics">
+                            </canvas>
                         </div>
                     </md-list-item>
                     <md-divider></md-divider>
@@ -128,7 +135,6 @@
 
     <script type="text/javascript">
           var API_PREFIX = "http://testhost1:1234";
-          var API_END = "";
           var STATUS_FAILED = "failed";
           var STATUS_OK = "succeed";
           var HB_TIMEOUT = 30;
@@ -153,14 +159,13 @@
                           .primaryPalette('brown')
                           .accentPalette('red');
 
-              })
+              }).run()
                   .value("API_URL", {
-                      "rgAll": getRandomDomain() + "/rg/all" + API_END,
+                      "rgAll": getRandomDomain() + "/rg/all",
                       "rgDetail": getRandomDomain() + "/rg/",
                       'rgAction': getRandomDomain() + "/rg/",
-                      'cms': getRandomDomain() + '/cms/' + API_END,
+                      'cms': getRandomDomain() + '/cms/',
                       'rpAction': getRandomDomain() + '/rp/',
-                      'sse': getRandomDomain() + '/sse/',
                   })
           ;
 

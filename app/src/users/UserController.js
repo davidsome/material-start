@@ -19,15 +19,18 @@
     self.makeContact  = makeContact;
     self.rpStart = rpStart;
     self.rpStop = rpStop;
-    self.showStatDetail = showStatDetail;
+      self.rgHB = rgHB;
 
     userService
           .loadrgAll
           .then( function( rgs ) {
             self.rgs    = [].concat(rgs);
-//            self.selected = rgs[0];
-          });
-
+            self.selected = self.rgs[0];
+            for (var j=0;j<=self.rgs.length-1;j++){
+                getRPS(self.rgs[j])
+            }
+            sse()
+        });
     // *********************************
     // Internal methods
     // *********************************
@@ -48,6 +51,7 @@
     var len = $scope.labels.length;
     $scope.series_traffic = ['totalUnZippedDataBytes', 'totalZippedDataBytes'];
     $scope.series_statistics = ['cmdSuccessCount', 'cmdFailedCount', 'cmdIgnoredCount'];
+    $scope.series_statistics_delay = ['delay'];
     $scope.datasetOverride_traffic = [{ yAxisID: 'y-axis-1' }];
     $scope.datasetOverride_statistics = [{ yAxisID: 'y-axis-1' }];
     $scope.options_traffic = {
@@ -75,105 +79,134 @@
           }
       };
 
-     function showStatDetail(i){
-         var parentEl = angular.element(document.body);
-         $mdDialog.show({
-             parent: parentEl,
-             controller: showStatDetailCtrl
-         });
-
-         function showStatDetailCtrl(){
-
-         }
-
+     function selectRg(rg){
+         self.selected = rg
      }
 
-    function selectRg ( rg ) {
-        self.selected = rg;
+      function sse (){
+          if (typeof (EventSource) !== "undefined"){
+//              server send events, one domain maximum 6 sockets
+              var source_heartbeat = new EventSource(getRandomDomain() + '/sse/all/heartbeat');
+              var source_stat = new EventSource(getRandomDomain() + '/sse/all/stat');
+              var source_traffic = new EventSource(getRandomDomain() + '/sse/all/traffic');
+              var source_statistics = new EventSource(getRandomDomain() + '/sse/all/statistics');
+//listen
+              source_heartbeat.onmessage = function (event) {
+                  var a_data = JSON.parse(event.data);
+                  for (var j=0;j<=self.rgs.length-1;j++){
+                      for (var i=0;i<=self.rgs[j].rps.length-1;i++){
+                          if (self.rgs[j].rps[i].data[0] == a_data.PairID){
+                              if(a_data.BROKER != undefined){
+                                  self.rgs[j].rps[i].sse.heartbeat.broker_time = HB_TIMEOUT;
+                                  break
+                              }
+                              else if(a_data.DUPLICATOR != undefined){
+                                  self.rgs[j].rps[i].sse.heartbeat.duplicator_time = HB_TIMEOUT;
+                                  break
+                              }
+                          }
+                      }
+                }
+                $scope.$apply();
+              };
+
+              source_traffic.onmessage = function (event) {
+                  var a_data = JSON.parse(event.data);
+                  for (var j=0;j<=self.rgs.length-1;j++){
+                      for (var i=0;i<=self.rgs[j].rps.length-1;i++){
+                          if (self.rgs[j].rps[i].data[0] == a_data.PairID) {
+                              if (self.rgs[j].rps[i].sse.traffic[0].length >= len){
+                                  self.rgs[j].rps[i].sse.traffic[0].shift();
+                                  self.rgs[j].rps[i].sse.traffic[1].shift()
+                              }
+                              self.rgs[j].rps[i].sse.traffic[0].push(a_data.data.totalUnZippedDataBytes);
+                              self.rgs[j].rps[i].sse.traffic[1].push(a_data.data.totalZippedDataBytes);
+                              break
+                          }
+                      }
+                  }
+                  $scope.$apply();
+              };
+
+                source_statistics.onmessage = function (event) {
+                    var a_data = JSON.parse(event.data);
+                    for (var j=0;j<=self.rgs.length-1;j++){
+                        for (var i=0;i<=self.rgs[j].rps.length-1;i++) {
+                            if (self.rgs[j].rps[i].data[0] == a_data.PairID) {
+                                if (self.rgs[j].rps[i].sse.statistics[0].length >=len){
+                                    self.rgs[j].rps[i].sse.statistics[0].shift();
+                                    self.rgs[j].rps[i].sse.statistics[1].shift();
+                                    self.rgs[j].rps[i].sse.statistics[2].shift();
+                                    self.rgs[j].rps[i].sse.statistics_delay[0].shift()
+                                }
+                                self.rgs[j].rps[i].sse.statistics[0].push(a_data.data.cmdSuccessCount);
+                                self.rgs[j].rps[i].sse.statistics[1].push(a_data.data.cmdFailedCount);
+                                self.rgs[j].rps[i].sse.statistics[2].push(a_data.data.cmdIgnoredCount);
+                                self.rgs[j].rps[i].sse.statistics_delay[0].push(a_data.data.delay);
+                                break
+                            }
+                        }
+                    }
+                    $scope.$apply();
+                };
+
+                source_stat.onmessage = function (event) {
+                    var a_data  = JSON.parse(event.data);
+                    for (var j=0;j<=self.rgs.length-1;j++){
+                        for (var i=0;i<=self.rgs[j].rps.length-1;i++){
+                            if (self.rgs[j].rps[i].data[0] == a_data.PairID) {
+                                self.rgs[j].rps[i].sse.stat.push(a_data.data.message);
+                                break
+                            }
+                        }
+                    }
+                    $scope.$apply();
+                };
+//                        source_stat.onerror = function (event){
+//                            console.log(event);
+//                            source_stat.close()
+//                        };
+          }else{
+              alert("SSE not supported by browser")
+          }
+      }
+    function rgHB(rg){
+        for (var i=0;i<=rg.rps.length-1;i++){
+            console.log(rg.rps)
+            if (rg.rps[i].sse.heartbeat.broker_time < 0 || rg.rps[i].sse.heartbeat.duplicator_time < 0 ){
+                return false
+            }
+        }
+        return true
+    }
+
+    function getRPS ( rg ) {
 
         $http.get(API_URL['rgAction']+rg.id+'/pairs').success(function(data){
-            self.selected.rps = [];
+            rg.rps = [];
             for (var i=0;i<=data.length-1;i++){
-                self.selected.rps[i] = {};
-                self.selected.rps[i].data = data[i];
-                self.selected.rps[i].sse = {};
-                self.selected.rps[i].sse.stat = [];
-                self.selected.rps[i].sse.stat_detail = false;
-                self.selected.rps[i].sse.heartbeat = {};
-                self.selected.rps[i].sse.heartbeat.broker = [];
-                self.selected.rps[i].sse.heartbeat.broker_time = HB_TIMEOUT;
-                self.selected.rps[i].sse.heartbeat.duplicator = [];
-                self.selected.rps[i].sse.heartbeat.duplicator_time = HB_TIMEOUT;
-                self.selected.rps[i].sse.traffic = [[],[]];
-                self.selected.rps[i].sse.statistics = [[],[],[]];
+                rg.rps[i] = {};
+                rg.rps[i].data = data[i];
+                rg.rps[i].sse = {};
+                rg.rps[i].sse.stat = [];
+                rg.rps[i].sse.stat_detail = false;
+                rg.rps[i].sse.heartbeat = {};
+                rg.rps[i].sse.heartbeat.broker = [];
+                rg.rps[i].sse.heartbeat.broker_time = HB_TIMEOUT;
+                rg.rps[i].sse.heartbeat.duplicator = [];
+                rg.rps[i].sse.heartbeat.duplicator_time = HB_TIMEOUT;
+                rg.rps[i].sse.traffic = [[],[]];
+                rg.rps[i].sse.statistics = [[],[],[]];
+                rg.rps[i].sse.statistics_delay = [[]];
 
                 !function(i){
-                    if (typeof (EventSource) !== "undefined"){
-                        var source_heartbeat = new EventSource(getRandomDomain() + '/sse/'+data[i][0]+'/heartbeat');
-                        var source_stat = new EventSource(getRandomDomain() + '/sse/'+data[i][0]+'/stat');
-                        var source_traffic = new EventSource(getRandomDomain() + '/sse/'+data[i][0]+'/traffic');
-                        var source_statistics = new EventSource(getRandomDomain() + '/sse/'+data[i][0]+'/statistics');
+                    var timer = $interval(function(){
+                        rg.rps[i].sse.heartbeat.broker_time--;
+                        rg.rps[i].sse.heartbeat.duplicator_time--;
+//                        console.log(i, rg.rps[i].sse.heartbeat.broker_time)
+                    }, 1000);
 
-                        var timer = $interval(function(){
-                            self.selected.rps[i].sse.heartbeat.broker_time--;
-                            self.selected.rps[i].sse.heartbeat.duplicator_time--;
-                            console.log(i, self.selected.rps[i].sse.heartbeat.broker_time)
-                        }, 1000);
-
-                        source_heartbeat.onmessage = function (event) {
-                            var hb_data = event.data.split(",");
-                            if (hb_data[0] == "BROKER"){
-                                self.selected.rps[i].sse.heartbeat.broker_time = HB_TIMEOUT;
-                                self.selected.rps[i].sse.heartbeat.broker.push(event.data);
-                            }
-                            if (hb_data[0] == "DUPLICATOR"){
-                                self.selected.rps[i].sse.heartbeat.duplicator_time = HB_TIMEOUT;
-                                self.selected.rps[i].sse.heartbeat.duplicator.push(event.data);
-                            }
-//                            $log.debug(self.selected.rps[i].sse.heartbeat);
-                            $scope.$apply();
-                        };
-
-                        source_stat.onmessage = function (event) {
-                            self.selected.rps[i].sse.stat.push(event.data);
-                            console.log(self.selected.rps[i].sse.stat)
-                            $scope.$apply();
-                        };
-                        source_stat.onerror = function (event){
-                            console.log(event);
-                            source_stat.close()
-                        };
-
-                        source_traffic.onmessage = function (event) {
-                            if (self.selected.rps[i].sse.traffic[0].length >= len){
-                                self.selected.rps[i].sse.traffic[0].shift()
-                                self.selected.rps[i].sse.traffic[1].shift()
-                            }
-                            self.selected.rps[i].sse.traffic[0].push(JSON.parse(event.data).totalUnZippedDataBytes);
-                            self.selected.rps[i].sse.traffic[1].push(JSON.parse(event.data).totalZippedDataBytes);
-                            $log.debug(self.selected.rps[i].sse.traffic);
-                            $scope.$apply();
-                        };
-
-                        source_statistics.onmessage = function (event) {
-                            if (self.selected.rps[i].sse.statistics[0].length >=len){
-                                self.selected.rps[i].sse.statistics[0].shift()
-                                self.selected.rps[i].sse.statistics[1].shift()
-                                self.selected.rps[i].sse.statistics[2].shift()
-                            }
-                            self.selected.rps[i].sse.statistics[0].push(JSON.parse(event.data).cmdSuccessCount);
-                            self.selected.rps[i].sse.statistics[1].push(JSON.parse(event.data).cmdFailedCount);
-                            self.selected.rps[i].sse.statistics[2].push(JSON.parse(event.data).cmdIgnoredCount);
-                            $log.debug(self.selected.rps[i].sse.statistics);
-                            $scope.$apply();
-                        };
-
-                    }else{
-                        alert("SSE not supported by browser")
-                    }
-                    console.log(self.selected.rps)
-
-                }(i)
+                }(i);
             }
         });
 
@@ -217,7 +250,7 @@
               };
 
               this.rgCreate = function(action){
-                  rg_http_action(API_URL['rgAction'], {'src': this.src, "dest": this.dest}, "POST");
+                  rg_http_action(API_URL['rgAction']+"?src="+this.src+"&dest="+this.dest, {'src': this.src, "dest": this.dest}, "POST");
 //                  $http.post(API_URL['rgCreate'], {'src': this.src, "dest": this.dest}).success(function(data){
 //                      console.log(data)
 //                  });
@@ -233,7 +266,7 @@
               data: data,
               method: method
           }).then(function successCallback(response){
-              config.textContent(response.data.status+response.data.reason).highlightClass("md-accent")
+              config.textContent(response.data.status+"    "+response.data.reason).highlightClass("md-accent")
               $mdToast.show(config);
               $log.debug(response)
           }, function errorCallback(response) {
