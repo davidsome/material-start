@@ -36,6 +36,20 @@
             </md-input-container>
         </md-list-item>
         <md-list-item>
+            <md-input-container>
+                <label for="filter">过滤器</label>
+                <input type="text" id="filter" name="filter" ng-model="vm.filter"/>
+            </md-input-container>
+        </md-list-item>
+        <md-list-item>
+            <md-input-container>
+                <label for="type">类型</label>
+                <md-select ng-model="vm.type">
+                    <md-option ng-repeat="opt in vm.type_items" value="{{opt.name}}">{{opt.name}}</md-option>
+                </md-select>
+            </md-input-container>
+        </md-list-item>
+        <md-list-item>
             <md-button class="md-raised" ng-click="vm.rgCreate()">
                 <md-icon md-svg-src="your/icon.svg"></md-icon>
                 提交

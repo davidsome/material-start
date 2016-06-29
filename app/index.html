@@ -30,60 +30,68 @@
       <md-button class="menu" hide-gt-sm ng-click="ul.toggleList()" aria-label="Show User List">
         <md-icon md-svg-icon="menu" ></md-icon>
       </md-button>
-      <h1>Redis Cluster Manager</h1>
+      <h1>&nbsp;Redis 异地复制数据</h1>
     </md-toolbar>
 
     <div flex layout="row">
-
         <md-sidenav  ng-click="ul.toggleList()" md-is-locked-open="$mdMedia('gt-sm')" md-component-id="left" class="md-whiteframe-z2" >
           <md-list>
+              <div layout="row" layout-sm="column" layout-align="space-around" ng-show="ul.rgs.length == 0">
+                  <md-progress-circular md-mode="indeterminate"></md-progress-circular>
+              </div>
             <md-list-item ng-repeat="it in ul.rgs">
-                <md-button ng-click="ul.selectRg(it)" ng-class="{'selected' : it === ul.selected }">
-                    状态{{it.status}}
-                    <span ng-show="it|rg_hb" style="color: green">alive</span>
-                    <span ng-show="!(it|rg_hb)" style="color: red">down</span>
-                    <p>源{{it.source}}</p>
-                       <p>目的{{it.destination}}</p>
-             </md-button>
+                <md-card style="width: 400px">
+                    <md-button ng-click="ul.selectRg(it)" ng-class="{'selected' : it === ul.selected }">
+                        <p>状态&nbsp;{{it.status}}
+                            <span ng-show="it|rg_hb" style="color: green">alive</span>
+                            <span ng-show="!(it|rg_hb)" style="color: red">down</span>
+                        </p>
+                        <p>源&nbsp;{{it.source}}</p>
+                        <p>目的&nbsp;{{it.destination}}</p>
+                    </md-button>
+                </md-card>
             </md-list-item>
             <md-list-item>
-              <md-button class="md-fab md-primary" ng-click="ul.addRg()">新增rg</md-button>
+              <md-button class="md-fab md-primary" ng-click="ul.addRg()" style="background: rgb(63, 81, 181)">新增rg</md-button>
             </md-list-item>
           </md-list>
         </md-sidenav>
 
         <md-content flex id="content">
-          <md-icon md-svg-icon="svg-1" class="avatar"></md-icon>
-          <h2>任务状态{{ul.selected.status}}</h2>
-            <p>任务ID {{ul.selected.id}}</p>
-           <p>源{{ul.selected.source}}-->目的{{ul.selected.destination}}</p>
-           <h2>该rg下面所有的rp</h2>
-            <!---->
+            <h2>状态&nbsp;{{ul.selected.status}}</h2>
+            <p>源&nbsp;{{ul.selected.source}}-->目的&nbsp;{{ul.selected.destination}}</p>
+            <p>压缩比&nbsp;{{ul.selected|rg_ratio}}</p>
+            <p>汇总流量</p>
+            <div class="canvas-div">
+                <canvas class="chart chart-line" chart-data="ul.selected.rps_traffic_all"
+                        chart-labels="labels" chart-series="series_traffic" chart-options="options_traffic"
+                        chart-dataset-override="datasetOverride_traffic" style="width: 300px; height: 200px"></canvas>
+            </div>
+            <md-divider></md-divider>
             <md-content>
                 <md-list>
                     <div ng-repeat="item in ul.selected.rps">
                     <md-list-item class="md-3-line" >
                         <div class="md-list-item-text">
-                            <h3>任务ID {{item.data[0]}}</h3>
-                            <p>源{{item.data[1].source}}</p>
-                            <p>目的{{item.data[1].destination}}</p>
+                            <p>源&nbsp;{{item.data[1].source}}</p>
+                            <p>目的&nbsp;{{item.data[1].destination}}</p>
                         </div>
-                        <md-button class="md-fab md-primary" ng-click="ul.rpStart(item.data[0])">start</md-button>
+                        <md-button class="md-fab md-primary" style="background: rgb(0, 150, 136)" ng-click="ul.rpStart(item.data[0])">start</md-button>
                         <md-button class="md-fab md-warn" ng-click="ul.rpStop(item.data[0])">stop</md-button>
                     </md-list-item>
                     <md-divider></md-divider>
                     <md-list-item>
                         <div class="md-list-item-text">
-                            <p>当前stat:{{item.sse.stat.slice(-1)[0]}}
-                                <md-button class="md-primary md-raised" ng-click="item.sse.stat_detail=!item.sse.stat_detail">
+                            <p>当前stat:{{item.sse.stat.slice(-1)[0].message}}
+                                <md-button class="md-primary md-fab" style="background: rgb(63, 81, 181)" ng-click="item.sse.stat_detail=!item.sse.stat_detail">
                                     <span ng-show="item.sse.stat_detail">收起</span>
                                     <span ng-show="!item.sse.stat_detail">展开</span>
                                 </md-button>
                             </p>
-                            <p ng-show="item.sse.stat_detail">
-                                {{item.sse.stat}}
-                            </p>
-                            <p>当前heartbeat:
+                            <ul ng-repeat="stat in item.sse.stat" ng-show="item.sse.stat_detail">
+                                <li>{{stat.message}}</li>
+                            </ul>
+                            <p>心跳检测
                                 <strong>broker</strong>
                                 <span style="color: green" ng-show="item.sse.heartbeat.broker_time >= 0">alive</span>
                                 <span style="color: red" ng-show="item.sse.heartbeat.broker_time < 0">down</span>
@@ -91,21 +99,27 @@
                                 <span style="color: green" ng-show="item.sse.heartbeat.duplicator_time >= 0">alive</span>
                                 <span style="color: red" ng-show="item.sse.heartbeat.duplicator_time < 0">down</span>
                             </p>
-                            <p>当前traffic:</p>
+                            <p>流量</p>
+                            <div class="canvas-div">
                                 <canvas class="chart chart-line" chart-data="item.sse.traffic"
                                         chart-labels="labels" chart-series="series_traffic" chart-options="options_traffic"
                                         chart-dataset-override="datasetOverride_traffic">
                                 </canvas>
-                            <p>当前statistics:</p>
+                            </div>
+                            <p>复制命令数</p>
+                            <div class="canvas-div">
                                 <canvas class="chart chart-line" chart-data="item.sse.statistics"
                                         chart-labels="labels" chart-series="series_statistics" chart-options="options_statistics"
                                         chart-dataset-override="datasetOverride_statistics">
                                 </canvas>
-                            <p>当前delay</p>
-                            <canvas class="chart chart-line" chart-data="item.sse.statistics_delay"
-                                    chart-labels="labels" chart-series="series_statistics_delay" chart-options="options_statistics"
-                                    chart-dataset-override="datasetOverride_statistics">
-                            </canvas>
+                            </div>
+                            <p>复制延迟</p>
+                            <div class="canvas-div">
+                                <canvas class="chart chart-line" chart-data="item.sse.statistics_delay"
+                                        chart-labels="labels" chart-series="series_statistics_delay" chart-options="options_statistics"
+                                        chart-dataset-override="datasetOverride_statistics">
+                                </canvas>
+                            </div>
                         </div>
                     </md-list-item>
                     <md-divider></md-divider>
@@ -114,8 +128,8 @@
             </md-content>
             <!---->
 
-          <md-button class="share md-raised" md-no-ink ng-click="ul.makeContact(ul.selected)" aria-label="Share with {{ ul.selected.name }}">
-              action
+          <md-button class="share md-fab" md-no-ink ng-click="ul.makeContact(ul.selected)" aria-label="Share with {{ ul.selected.name }}">
+              <md-icon md-svg-icon="menu" ></md-icon>
           </md-button>
         </md-content>
 
@@ -134,14 +148,35 @@
     <script src="./src/users/UserService.js"></script>
 
     <script type="text/javascript">
-          var API_PREFIX = "http://testhost1:1234";
           var STATUS_FAILED = "failed";
           var STATUS_OK = "succeed";
           var HB_TIMEOUT = 30;
+          var STAT_CODE_OK = [0, 1, 2, 4];
           function getRandomDomain(){
               var num = parseInt(10*Math.random());
-              return "http://testhost" + num + ":1234"
+//              在这里修改访问地址
+              return "http://testhost" + "1" + ":1234"
           }
+
+          function getAve(array){
+              var ave = 0;
+              for (var i=0;i<array.length;i++){
+                  ave += array[i];
+              }
+              ave /= i;
+              return ave
+          }
+
+          function parseDecimal(item){
+              return (Math.round(item*100)/100);
+          }
+
+          function ByteToMB(item){
+              item  /= (1024 * 1024);
+              return parseDecimal(item)
+          }
+
+          Chart.defaults.global.legend.display = true;
           angular
               .module('starterApp', ['ngMaterial', 'chart.js', 'users'])
               .config(function($mdThemingProvider, $mdIconProvider){
@@ -166,6 +201,10 @@
                       'rgAction': getRandomDomain() + "/rg/",
                       'cms': getRandomDomain() + '/cms/',
                       'rpAction': getRandomDomain() + '/rp/',
+                      'sseHeartbeat': getRandomDomain() + '/sse/all/heartbeat',
+                      'sseStat': getRandomDomain() + '/sse/all/stat',
+                      'sseTraffic': getRandomDomain() + '/sse/all/traffic',
+                      'sseStatistics': getRandomDomain() + '/sse/all/statistics'
                   })
           ;
 

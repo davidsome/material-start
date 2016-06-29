@@ -13,6 +13,16 @@
               return true;
           }
       })
+      .filter("rg_ratio", function(){
+          return function(rg){
+              var zip = 0, unzip = 0;
+              for (var i=0;i<=rg.rps.length-1;i++){
+                  unzip += getAve(rg.rps[i].sse.traffic[0]);
+                  zip += getAve(rg.rps[i].sse.traffic[1])
+              }
+              return parseDecimal(unzip/zip)
+          }
+      })
   ;
 
   /**
@@ -29,6 +39,7 @@
         var deferred = $q.defer();
         $http.get(url, args)
             .success(function(data){
+                console.log(data)
                 deferred.resolve(data);
             })
             .error(function (error) {

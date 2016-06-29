@@ -19,12 +19,11 @@
     self.makeContact  = makeContact;
     self.rpStart = rpStart;
     self.rpStop = rpStop;
-      self.rgHB = rgHB;
 
     userService
           .loadrgAll
           .then( function( rgs ) {
-            self.rgs    = [].concat(rgs);
+            self.rgs    = rgs;
             self.selected = self.rgs[0];
             for (var j=0;j<=self.rgs.length-1;j++){
                 getRPS(self.rgs[j])
@@ -47,9 +46,10 @@
      * @param menuId
      */
         //        chart settings
-    $scope.labels = ['', '', '', '', '', '', ''];
+    $scope.labels = ['', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '',
+        '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', ''];
     var len = $scope.labels.length;
-    $scope.series_traffic = ['totalUnZippedDataBytes', 'totalZippedDataBytes'];
+    $scope.series_traffic = ['totalUnZippedMBytes', 'totalZippedMBytes'];
     $scope.series_statistics = ['cmdSuccessCount', 'cmdFailedCount', 'cmdIgnoredCount'];
     $scope.series_statistics_delay = ['delay'];
     $scope.datasetOverride_traffic = [{ yAxisID: 'y-axis-1' }];
@@ -86,41 +86,27 @@
       function sse (){
           if (typeof (EventSource) !== "undefined"){
 //              server send events, one domain maximum 6 sockets
-              var source_heartbeat = new EventSource(getRandomDomain() + '/sse/all/heartbeat');
-              var source_stat = new EventSource(getRandomDomain() + '/sse/all/stat');
-              var source_traffic = new EventSource(getRandomDomain() + '/sse/all/traffic');
-              var source_statistics = new EventSource(getRandomDomain() + '/sse/all/statistics');
-//listen
+              var source_heartbeat = new EventSource(API_URL['sseHeartbeat']);
+              var source_stat = new EventSource(API_URL['sseStat']);
+              var source_traffic = new EventSource(API_URL['sseTraffic']);
+              var source_statistics = new EventSource(API_URL['sseStatistics']);
+//listen sse
               source_heartbeat.onmessage = function (event) {
                   var a_data = JSON.parse(event.data);
                   for (var j=0;j<=self.rgs.length-1;j++){
                       for (var i=0;i<=self.rgs[j].rps.length-1;i++){
                           if (self.rgs[j].rps[i].data[0] == a_data.PairID){
-                              if(a_data.BROKER != undefined){
-                                  self.rgs[j].rps[i].sse.heartbeat.broker_time = HB_TIMEOUT;
-                                  break
+                              if (STAT_CODE_OK.indexOf(self.rgs[j].rps[i].sse.stat.slice(-1)[0].code) > -1){
+                                  if(a_data.BROKER != undefined){
+                                      self.rgs[j].rps[i].sse.heartbeat.broker_time = HB_TIMEOUT;
+                                  }
+                                  else if(a_data.DUPLICATOR != undefined){
+                                      self.rgs[j].rps[i].sse.heartbeat.duplicator_time = HB_TIMEOUT;
+                                  }
+                              }else{
+                                  self.rgs[j].rps[i].sse.heartbeat.broker_time = -1;
+                                  self.rgs[j].rps[i].sse.heartbeat.duplicator_time = -1;
                               }
-                              else if(a_data.DUPLICATOR != undefined){
-                                  self.rgs[j].rps[i].sse.heartbeat.duplicator_time = HB_TIMEOUT;
-                                  break
-                              }
-                          }
-                      }
-                }
-                $scope.$apply();
-              };
-
-              source_traffic.onmessage = function (event) {
-                  var a_data = JSON.parse(event.data);
-                  for (var j=0;j<=self.rgs.length-1;j++){
-                      for (var i=0;i<=self.rgs[j].rps.length-1;i++){
-                          if (self.rgs[j].rps[i].data[0] == a_data.PairID) {
-                              if (self.rgs[j].rps[i].sse.traffic[0].length >= len){
-                                  self.rgs[j].rps[i].sse.traffic[0].shift();
-                                  self.rgs[j].rps[i].sse.traffic[1].shift()
-                              }
-                              self.rgs[j].rps[i].sse.traffic[0].push(a_data.data.totalUnZippedDataBytes);
-                              self.rgs[j].rps[i].sse.traffic[1].push(a_data.data.totalZippedDataBytes);
                               break
                           }
                       }
@@ -128,7 +114,39 @@
                   $scope.$apply();
               };
 
-                source_statistics.onmessage = function (event) {
+              source_traffic.onmessage = function (event) {
+                  var a_data = JSON.parse(event.data);
+                  for (var j=0;j<=self.rgs.length-1;j++){
+                      for (var i=0;i<=self.rgs[j].rps.length-1;i++){
+                          if (self.rgs[j].rps[i].data[0] == a_data.PairID) {
+//                              save single rp traffic
+                              if (self.rgs[j].rps[i].sse.traffic[0].length >= len){
+                                  self.rgs[j].rps[i].sse.traffic[0].shift();
+                                  self.rgs[j].rps[i].sse.traffic[1].shift()
+                              }
+                              self.rgs[j].rps[i].sse.traffic[0].push(ByteToMB(a_data.data.totalUnZippedDataBytes));
+                              self.rgs[j].rps[i].sse.traffic[1].push(ByteToMB(a_data.data.totalZippedDataBytes));
+//                              save all rps traffic
+                              if (self.rgs[j].rps_traffic_all[0].length >= len){
+                                  self.rgs[j].rps_traffic_all[0].shift();
+                                  self.rgs[j].rps_traffic_all[1].shift();
+                              }
+                              var rps_unzip = ByteToMB(a_data.data.totalUnZippedDataBytes);
+                              var rps_zip = ByteToMB(a_data.data.totalZippedDataBytes);
+                              if (self.rgs[j].rps_traffic_all[0].length > 0){
+                                  rps_unzip += self.rgs[j].rps_traffic_all[0].slice(-1)[0];
+                                  rps_zip += self.rgs[j].rps_traffic_all[1].slice(-1)[0];
+                              }
+                              self.rgs[j].rps_traffic_all[0].push(rps_unzip);
+                              self.rgs[j].rps_traffic_all[1].push(rps_zip);
+                              break
+                          }
+                      }
+                  }
+                  $scope.$apply();
+              };
+
+              source_statistics.onmessage = function (event) {
                     var a_data = JSON.parse(event.data);
                     for (var j=0;j<=self.rgs.length-1;j++){
                         for (var i=0;i<=self.rgs[j].rps.length-1;i++) {
@@ -150,12 +168,15 @@
                     $scope.$apply();
                 };
 
-                source_stat.onmessage = function (event) {
+              source_stat.onmessage = function (event) {
                     var a_data  = JSON.parse(event.data);
                     for (var j=0;j<=self.rgs.length-1;j++){
                         for (var i=0;i<=self.rgs[j].rps.length-1;i++){
                             if (self.rgs[j].rps[i].data[0] == a_data.PairID) {
-                                self.rgs[j].rps[i].sse.stat.push(a_data.data.message);
+                                self.rgs[j].rps[i].sse.stat.push({
+                                    "code": a_data.data.code,
+                                    "message": a_data.data.message
+                                });
                                 break
                             }
                         }
@@ -170,15 +191,7 @@
               alert("SSE not supported by browser")
           }
       }
-    function rgHB(rg){
-        for (var i=0;i<=rg.rps.length-1;i++){
-            console.log(rg.rps)
-            if (rg.rps[i].sse.heartbeat.broker_time < 0 || rg.rps[i].sse.heartbeat.duplicator_time < 0 ){
-                return false
-            }
-        }
-        return true
-    }
+
 
     function getRPS ( rg ) {
 
@@ -196,14 +209,15 @@
                 rg.rps[i].sse.heartbeat.duplicator = [];
                 rg.rps[i].sse.heartbeat.duplicator_time = HB_TIMEOUT;
                 rg.rps[i].sse.traffic = [[],[]];
+                rg.rps_traffic_all = [[],[]];
                 rg.rps[i].sse.statistics = [[],[],[]];
                 rg.rps[i].sse.statistics_delay = [[]];
+                console.log(rg)
 
                 !function(i){
                     var timer = $interval(function(){
                         rg.rps[i].sse.heartbeat.broker_time--;
                         rg.rps[i].sse.heartbeat.duplicator_time--;
-//                        console.log(i, rg.rps[i].sse.heartbeat.broker_time)
                     }, 1000);
 
                 }(i);
@@ -235,6 +249,17 @@
 
           function addRgController( $mdBottomSheet ) {
               this.cms_items = self.cms_items;
+              this.type_items = [
+                  {
+                      "name": "redisCluser"
+                  },
+                  {
+                      "name": "redis"
+                  },
+                  {
+                      "name": "kafka"
+                  }
+              ];
 
               this.chosen = function(){
                   angular.element(document.getElementById("srcSearchTerm")).on('keydown', function(ev) {
@@ -251,26 +276,38 @@
 
               this.rgCreate = function(action){
                   rg_http_action(API_URL['rgAction']+"?src="+this.src+"&dest="+this.dest, {'src': this.src, "dest": this.dest}, "POST");
-//                  $http.post(API_URL['rgCreate'], {'src': this.src, "dest": this.dest}).success(function(data){
-//                      console.log(data)
-//                  });
                   $mdBottomSheet.hide(action);
               }
           }
 
       }
       function rg_http_action(url, data, method){
-          var config = $mdToast.simple().position("top right");
+          var config = $mdToast.simple().position("bottom right");
           $http({
               url: url,
               data: data,
               method: method
           }).then(function successCallback(response){
-              config.textContent(response.data.status+"    "+response.data.reason).highlightClass("md-accent")
+              config.textContent(response.data.status+"    "+response.data.reason).highlightClass("md-accent");
               $mdToast.show(config);
-              $log.debug(response)
+              $log.debug(response.data);
+              if (response.data.status == STATUS_OK){
+                  if (url.indexOf(API_URL['rgAction']) > -1){
+                      $http.get(API_URL['rgAll']).success(function(new_rgs){
+                          var old_rgs = self.rgs;
+                          self.rgs = new_rgs;
+                          for (var i=0;i<=self.rgs.length-1;i++){
+                              for (var j=0;j<=old_rgs.length-1;j++){
+                                  if (self.rgs[i].id == old_rgs[j].id){
+                                      self.rgs[i].rps = old_rgs[j].rps;
+                                      self.rgs[i].rps_traffic_all = old_rgs[j].rps_traffic_all
+                                  }
+                              }
+                          }
+                      })
+                  }
+              }
           }, function errorCallback(response) {
-
           })
       }
     /**
