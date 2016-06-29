@@ -184,7 +184,6 @@
                     $scope.$apply();
                 };
 //                        source_stat.onerror = function (event){
-//                            console.log(event);
 //                            source_stat.close()
 //                        };
           }else{
@@ -193,7 +192,7 @@
       }
 
 
-    function getRPS ( rg ) {
+      function getRPS ( rg ) {
 
         $http.get(API_URL['rgAction']+rg.id+'/pairs').success(function(data){
             rg.rps = [];
@@ -212,7 +211,6 @@
                 rg.rps_traffic_all = [[],[]];
                 rg.rps[i].sse.statistics = [[],[],[]];
                 rg.rps[i].sse.statistics_delay = [[]];
-                console.log(rg)
 
                 !function(i){
                     var timer = $interval(function(){
@@ -292,17 +290,25 @@
               $mdToast.show(config);
               $log.debug(response.data);
               if (response.data.status == STATUS_OK){
+//                  对于rgAction操作需要reload rg的列表
                   if (url.indexOf(API_URL['rgAction']) > -1){
                       $http.get(API_URL['rgAll']).success(function(new_rgs){
+                          var rgs_set = [];
                           var old_rgs = self.rgs;
                           self.rgs = new_rgs;
                           for (var i=0;i<=self.rgs.length-1;i++){
+                              var flag = true;
                               for (var j=0;j<=old_rgs.length-1;j++){
                                   if (self.rgs[i].id == old_rgs[j].id){
                                       self.rgs[i].rps = old_rgs[j].rps;
-                                      self.rgs[i].rps_traffic_all = old_rgs[j].rps_traffic_all
+                                      self.rgs[i].rps_traffic_all = old_rgs[j].rps_traffic_all;
+                                      flag = false;
                                   }
                               }
+                              if (flag) rgs_set.push(self.rgs[i])
+                          }
+                          for (var s=0;s<=rgs_set.length-1;s++){
+                              getRPS(rgs_set[s])
                           }
                       })
                   }

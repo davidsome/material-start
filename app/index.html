@@ -150,7 +150,9 @@
     <script type="text/javascript">
           var STATUS_FAILED = "failed";
           var STATUS_OK = "succeed";
+//          heartbeat timeout
           var HB_TIMEOUT = 30;
+//          stat code ok list
           var STAT_CODE_OK = [0, 1, 2, 4];
           function getRandomDomain(){
               var num = parseInt(10*Math.random());
@@ -197,7 +199,6 @@
               }).run()
                   .value("API_URL", {
                       "rgAll": getRandomDomain() + "/rg/all",
-                      "rgDetail": getRandomDomain() + "/rg/",
                       'rgAction': getRandomDomain() + "/rg/",
                       'cms': getRandomDomain() + '/cms/',
                       'rpAction': getRandomDomain() + '/rp/',

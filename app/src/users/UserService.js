@@ -5,22 +5,26 @@
          .service('userService', ['$q', '$http', 'API_URL', UserService])
       .filter("rg_hb", function(){
           return function(rg){
-              for (var i=0;i<=rg.rps.length-1;i++){
-                  if (rg.rps[i].sse.heartbeat.broker_time < 0 || rg.rps[i].sse.heartbeat.duplicator_time < 0 ){
-                      return false;
+              if (rg.rps != undefined){
+                  for (var i=0;i<=rg.rps.length-1;i++){
+                      if (rg.rps[i].sse.heartbeat.broker_time < 0 || rg.rps[i].sse.heartbeat.duplicator_time < 0 ){
+                          return false;
+                      }
                   }
+                  return true;
               }
-              return true;
           }
       })
       .filter("rg_ratio", function(){
           return function(rg){
-              var zip = 0, unzip = 0;
-              for (var i=0;i<=rg.rps.length-1;i++){
-                  unzip += getAve(rg.rps[i].sse.traffic[0]);
-                  zip += getAve(rg.rps[i].sse.traffic[1])
+              if (rg && rg.rps != undefined) {
+                  var zip = 0, unzip = 0;
+                  for (var i=0; i <= rg.rps.length-1; i++) {
+                      unzip += getAve(rg.rps[i].sse.traffic[0]);
+                      zip += getAve(rg.rps[i].sse.traffic[1])
+                  }
+                  return parseDecimal(unzip / zip)
               }
-              return parseDecimal(unzip/zip)
           }
       })
   ;
